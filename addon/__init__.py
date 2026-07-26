@@ -49,7 +49,8 @@ def cfg():
                              [60, 4, "blue", "#539bf5"], [120, 6, "turquoise", "#39c5cf"]])
     c.setdefault("over_flag", 1)
     c.setdefault("over_color", "#f85149")
-    c.setdefault("swipe_batch", 60)
+    c.setdefault("swipe_batch", 100)
+    c.setdefault("unlock_batch", 100)
     c.setdefault("swipe_autoplay", True)
     c.setdefault("improve_tag", "polyswipe::improve")
     return c
@@ -381,6 +382,28 @@ def show_swipe():
     _swipe.activateWindow()
 
 
+# ---------------------------------------------------------------- unlock next set
+def _unlock_next(scope):
+    """Unsuspend the next batch of locked recognition cards (oldest first)."""
+    n = cfg().get("unlock_batch", 100)
+    locked = sorted(mw.col.find_cards(f'deck:{scope["deck"]} card:1 is:suspended'))
+    batch = locked[:n]
+    if not batch:
+        tooltip(f"{scope['name']}: nothing left to unlock — all cards active 🎉")
+        return
+    try:
+        mw.col.unsuspend_cards(batch)
+    except Exception:
+        mw.col.sched.unsuspend_cards(batch)
+    tooltip(f"🔓 Unlocked {len(batch)} {scope['name']} card(s) · {len(locked) - len(batch)} still locked")
+
+
+def show_unlock():
+    scope = _pick_scope()
+    if scope:
+        _unlock_next(scope)
+
+
 # ---------------------------------------------------------------- menu / wire up
 def _install_menu():
     try:
@@ -392,6 +415,10 @@ def _install_menu():
         a2.setShortcut(QKeySequence("Ctrl+Shift+F"))
         qconnect(a2.triggered, show_stats)
         mw.form.menuTools.addAction(a2)
+        a3 = QAction("🔓 Polyswipe: Unlock next set", mw)
+        a3.setShortcut(QKeySequence("Ctrl+Shift+U"))
+        qconnect(a3.triggered, show_unlock)
+        mw.form.menuTools.addAction(a3)
     except Exception as e:
         print(PFX, "menu:", e)
 

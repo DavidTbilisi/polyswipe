@@ -17,5 +17,6 @@
   ],
   "over_flag": 1,
   "over_color": "#f85149",
-  "swipe_batch": 60
+  "swipe_batch": 100,
+  "unlock_batch": 100
 }

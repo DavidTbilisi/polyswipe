@@ -14,7 +14,9 @@ Turns your encoding-review system into an in-Anki loop, for **any language deck*
 - **budgets** — `[max_seconds, anki_flag, name, colour]`, easiest first. Encoded within
   `max_seconds` → that flag.
 - **over_flag / over_color** — slower than the last budget → this flag (red = rework).
-- **swipe_batch** — how many unflagged cards to load per swipe session.
+- **swipe_batch** — how many unflagged cards to load per swipe session (a "set"; default 100).
+- **unlock_batch** — how many locked cards **🔓 Polyswipe: Unlock next set** (`Ctrl+Shift+U`)
+  unsuspends at a time (default 100). Batch loop: unlock a set → swipe those 100 → unlock the next.
 - **swipe_autoplay** — auto-play each card's `[sound:…]` audio as it appears in the swipe deck.
   There's always a 🔊 button on the card and an `R` key to replay.
 - **improve_tag** — swipe **up** (or ★ / `↑`) tags the note with this (default `polyswipe::improve`)
