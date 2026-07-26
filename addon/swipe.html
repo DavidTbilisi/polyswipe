@@ -50,6 +50,7 @@
  .btn.no{color:var(--red)}.btn.no:hover{background:rgba(248,81,73,.12);border-color:var(--red)}
  .btn.yes{color:var(--green)}.btn.yes:hover{background:rgba(63,185,80,.12);border-color:var(--green)}
  .btn.imp{color:#539bf5;font-size:20px}.btn.imp:hover{background:rgba(83,155,245,.14);border-color:#539bf5}
+ .btn.edit{width:46px;height:46px;font-size:18px;color:#8b949e}.btn.edit:hover{background:rgba(139,148,158,.14);border-color:#8b949e}
  .btn.undo{width:46px;height:46px;font-size:18px;color:var(--dim)}
  .btn.flip{width:46px;height:46px;font-size:18px;color:#539bf5}
  .done{text-align:center;color:var(--dim)}.done .big{font-size:52px}.done h2{color:var(--fg);margin:10px 0}
@@ -66,13 +67,14 @@
  <div class="dock">
    <div class="controls">
      <button class="btn undo" id="bUndo" title="Undo (Backspace)">↺</button>
+     <button class="btn edit" id="bEdit" title="Edit card (E)">✎</button>
      <button class="btn no"   id="bNo"   title="Rework — red (←)">✗</button>
      <button class="btn flip" id="bFlip" title="Flip (Space)">⇄</button>
      <button class="btn yes"  id="bYes"  title="Got it — green (→)">✓</button>
      <button class="btn imp"  id="bImprove" title="Improve — queue for re-encoding (↑)">★</button>
    </div>
    <div class="keys">
-     <kbd>←</kbd> rework · <kbd>→</kbd> got it · <kbd>↑</kbd> improve · <kbd>Space</kbd> flip · <kbd>R</kbd> replay · <kbd>Backspace</kbd> undo
+     <kbd>←</kbd> rework · <kbd>→</kbd> got it · <kbd>↑</kbd> improve · <kbd>E</kbd> edit · <kbd>Space</kbd> flip · <kbd>R</kbd> replay · <kbd>Backspace</kbd> undo
    </div>
  </div>
 
@@ -91,6 +93,7 @@ const MOCK = [
 const cards = (window.FR_CARDS && window.FR_CARDS.length) ? window.FR_CARDS.slice() : MOCK.slice();
 const decide = (id, d) => { if (window.pycmd) window.pycmd('frdecide:'+id+':'+d); else console.log('decide', id, d); };
 const play = fn => { if (fn) { if (window.pycmd) window.pycmd('frplay:'+fn); else console.log('play', fn); } };
+const edit = id => { if (window.pycmd) window.pycmd('fredit:'+id); else console.log('edit', id); };
 if (window.PS_FLAG) document.getElementById('ps-flag').textContent = window.PS_FLAG;
 if (window.PS_LANG) document.getElementById('ps-lang').textContent = ' · ' + window.PS_LANG;
 
@@ -184,12 +187,14 @@ document.getElementById('bYes').onclick=()=>swipeTop('green');
 document.getElementById('bImprove').onclick=()=>swipeTop('improve');
 document.getElementById('bFlip').onclick=flipTop;
 document.getElementById('bUndo').onclick=undo;
+document.getElementById('bEdit').onclick=()=>{ if(idx<total) edit(cards[idx].id); };
 window.addEventListener('keydown',e=>{
   if(e.key==='ArrowLeft')swipeTop('red');
   else if(e.key==='ArrowRight')swipeTop('green');
   else if(e.key==='ArrowUp'){e.preventDefault();swipeTop('improve');}
   else if(e.key===' '){e.preventDefault();flipTop();}
   else if(e.key==='r'||e.key==='R'){ if(idx<total) play(cards[idx].audio); }
+  else if(e.key==='e'||e.key==='E'){ if(idx<total) edit(cards[idx].id); }
   else if(e.key==='Backspace'){e.preventDefault();undo();}
 });
 render();

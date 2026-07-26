@@ -10,7 +10,7 @@ import re
 import time
 import json
 
-from aqt import mw, gui_hooks
+from aqt import mw, gui_hooks, dialogs
 from aqt.qt import (QAction, QDialog, QVBoxLayout, QKeySequence, QTimer, Qt,
                     QInputDialog)
 from aqt.utils import qconnect, tooltip
@@ -63,6 +63,17 @@ def _set_tag(cid, tag, add):
         mw.col.update_note(note)
     except Exception as e:
         print(PFX, "tag:", e)
+
+
+def _edit(cid):
+    """Open Anki's Browser focused on this card so it can be edited in place."""
+    try:
+        browser = dialogs.open("Browser", mw)
+        browser.search_for(f"cid:{cid}")
+        browser.activateWindow()
+        browser.raise_()
+    except Exception as e:
+        print(PFX, "edit:", e)
 
 
 def _scopes():
@@ -347,6 +358,9 @@ class SwipeDialog(QDialog):
         try:
             if cmd.startswith("frplay:"):
                 _play(cmd.split(":", 1)[1])
+                return
+            if cmd.startswith("fredit:"):
+                _edit(int(cmd.split(":", 1)[1]))
                 return
             if not cmd.startswith("frdecide:"):
                 return
