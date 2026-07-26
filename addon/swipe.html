@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>French Swipe Review</title>
+<style>
+ *{box-sizing:border-box;margin:0;padding:0;-webkit-user-select:none;user-select:none}
+ :root{--green:#3fb950;--red:#f85149;--bg:#0d1117;--card:#161b22;--line:#30363d;--fg:#e6edf3;--dim:#8b949e}
+ html,body{height:100%}
+ body{background:var(--bg);color:var(--fg);font:16px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;
+   display:flex;flex-direction:column;overflow:hidden;touch-action:none}
+ header{display:flex;align-items:center;gap:12px;padding:14px 18px;flex:none}
+ header h1{font-size:15px;font-weight:700}.fr{color:#539bf5}
+ .prog{flex:1;height:6px;background:#21262d;border-radius:4px;overflow:hidden}
+ .prog i{display:block;height:100%;background:var(--green);width:0;transition:width .3s}
+ .count{font-size:13px;color:var(--dim);font-variant-numeric:tabular-nums}
+ .stage{flex:1;position:relative;display:flex;align-items:center;justify-content:center;padding:8px;
+   min-height:calc(100vh - 165px)}
+ .card{position:absolute;width:min(90vw,420px);height:min(56vh,500px);background:var(--card);
+   border:1px solid var(--line);border-radius:22px;box-shadow:0 12px 40px rgba(0,0,0,.5);
+   display:flex;flex-direction:column;padding:28px;cursor:grab;will-change:transform;
+   transform-style:preserve-3d}
+ .card.top{cursor:grab}.card:active{cursor:grabbing}
+ .theme{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim)}
+ .word{font-size:min(11vw,44px);font-weight:800;letter-spacing:-.02em;margin-top:auto;text-align:center}
+ .hint{text-align:center;color:var(--dim);font-size:18px;margin-bottom:auto}
+ .flip-hint{position:absolute;bottom:16px;left:0;right:0;text-align:center;font-size:12px;color:#484f58}
+ .front{display:flex;flex-direction:column;flex:1}
+ .back{display:none;flex:1;overflow-y:auto;gap:14px;flex-direction:column;justify-content:center}
+ .card.flipped .front{display:none}.card.flipped .back{display:flex}
+ .card.flipped .word{margin:0 0 4px;font-size:32px}
+ .mn{border-left:3px solid var(--line);padding:2px 0 2px 12px}
+ .mn .lang{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.05em}
+ .mn .txt{font-size:16px}
+ .en{border-color:#539bf5}.ru{border-color:#f0883e}.ka{border-color:#a371f7}
+ .stamp{position:absolute;top:26px;padding:6px 16px;border:4px solid;border-radius:12px;
+   font-size:30px;font-weight:900;letter-spacing:.05em;opacity:0;transform:rotate(-18deg);text-transform:uppercase}
+ .stamp.like{right:22px;color:var(--green);border-color:var(--green);transform:rotate(14deg)}
+ .stamp.nope{left:22px;color:var(--red);border-color:var(--red)}
+ .stamp.sup{left:50%;color:#539bf5;border-color:#539bf5;transform:translateX(-50%) rotate(0)}
+ .spk{position:absolute;top:14px;right:14px;z-index:6;width:38px;height:38px;border-radius:50%;
+   border:1px solid var(--line);background:rgba(0,0,0,.25);color:var(--fg);font-size:17px;cursor:pointer;
+   display:flex;align-items:center;justify-content:center;transition:transform .1s,background .15s}
+ .spk:hover{background:rgba(83,155,245,.18);border-color:#539bf5}.spk:active{transform:scale(.9)}
+ .dock{position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--bg);border-top:1px solid #161b22}
+ .controls{display:flex;justify-content:center;align-items:center;gap:20px;padding:10px 0 6px;flex:none}
+ .btn{width:60px;height:60px;border-radius:50%;border:1px solid var(--line);background:var(--card);
+   font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .1s,background .15s}
+ .btn:hover{transform:scale(1.08)}.btn:active{transform:scale(.94)}
+ .btn.no{color:var(--red)}.btn.no:hover{background:rgba(248,81,73,.12);border-color:var(--red)}
+ .btn.yes{color:var(--green)}.btn.yes:hover{background:rgba(63,185,80,.12);border-color:var(--green)}
+ .btn.imp{color:#539bf5;font-size:20px}.btn.imp:hover{background:rgba(83,155,245,.14);border-color:#539bf5}
+ .btn.undo{width:46px;height:46px;font-size:18px;color:var(--dim)}
+ .btn.flip{width:46px;height:46px;font-size:18px;color:#539bf5}
+ .done{text-align:center;color:var(--dim)}.done .big{font-size:52px}.done h2{color:var(--fg);margin:10px 0}
+ .keys{text-align:center;font-size:12px;color:#8b949e;padding:0 0 14px;flex:none}
+ kbd{background:#21262d;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-family:inherit}
+</style></head>
+<body>
+ <header>
+   <h1><span id="ps-flag">🌐</span> <span class="fr">Poly</span>swipe<span id="ps-lang"></span></h1>
+   <div class="prog"><i id="bar"></i></div>
+   <div class="count" id="count">0 / 0</div>
+ </header>
+ <div class="stage" id="stage"></div>
+ <div class="dock">
+   <div class="controls">
+     <button class="btn undo" id="bUndo" title="Undo (Backspace)">↺</button>
+     <button class="btn no"   id="bNo"   title="Rework — red (←)">✗</button>
+     <button class="btn flip" id="bFlip" title="Flip (Space)">⇄</button>
+     <button class="btn yes"  id="bYes"  title="Got it — green (→)">✓</button>
+     <button class="btn imp"  id="bImprove" title="Improve — queue for re-encoding (↑)">★</button>
+   </div>
+   <div class="keys">
+     <kbd>←</kbd> rework · <kbd>→</kbd> got it · <kbd>↑</kbd> improve · <kbd>Space</kbd> flip · <kbd>R</kbd> replay · <kbd>Backspace</kbd> undo
+   </div>
+ </div>
+
+<script>
+// ---- data hook: the add-on sets window.FR_CARDS; browser dev falls back to mock ----
+const MOCK = [
+ {id:1, word:"la femme", hint:"woman / wife", theme:"People & family", audio:"la-femme.mp3",
+  en:"FAME — a famous woman on the red carpet.", ru:"ФАМ-фаталь — роковая женщина.", ka:"ფაფა — ქალი ფაფას ხარშავს."},
+ {id:2, word:"l'oiseau (m)", hint:"bird", theme:"Animals", audio:"l-oiseau.mp3",
+  en:"WAZZUP — a bird says 'wazzo!'", ru:"уазо — птичка.", ka:"ჩიტი — 'უაზო'."},
+ {id:3, word:"haut", hint:"high", theme:"Adjectives", audio:"haut.mp3",
+  en:"silent h & t — just 'OH'. Crane your neck UP at something HIGH: 'OH!'", ru:"«О!» — высоко.", ka:"მაღალი — 'ო!'"},
+ {id:4, word:"écrire", hint:"to write", theme:"Verbs", audio:"ecrire.mp3",
+  en:"A SCRIBE writes (é-CRIRE ≈ scribe).", ru:"экрир — писать, как «скриб».", ka:"წერა — 'ეკრირ' ≈ scribe."},
+];
+const cards = (window.FR_CARDS && window.FR_CARDS.length) ? window.FR_CARDS.slice() : MOCK.slice();
+const decide = (id, d) => { if (window.pycmd) window.pycmd('frdecide:'+id+':'+d); else console.log('decide', id, d); };
+const play = fn => { if (fn) { if (window.pycmd) window.pycmd('frplay:'+fn); else console.log('play', fn); } };
+if (window.PS_FLAG) document.getElementById('ps-flag').textContent = window.PS_FLAG;
+if (window.PS_LANG) document.getElementById('ps-lang').textContent = ' · ' + window.PS_LANG;
+
+const stage=document.getElementById('stage'), bar=document.getElementById('bar'), countEl=document.getElementById('count');
+const total=cards.length; let idx=0; const history=[];
+
+function esc(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function progress(){ bar.style.width=(100*idx/total)+'%'; countEl.textContent=Math.min(idx+1,total)+' / '+total; }
+
+function makeCard(c){
+  const el=document.createElement('div'); el.className='card top'; el.dataset.id=c.id; el._audio=c.audio;
+  el.innerHTML=`
+   <div class="stamp like">Got it</div><div class="stamp nope">Rework</div><div class="stamp sup">Improve</div>
+   ${c.audio?`<button class="spk" title="Replay (R)">♪</button>`:''}
+   <div class="front">
+     <div class="theme">${esc(c.theme)}</div>
+     <div class="word">${esc(c.word)}</div>
+     <div class="hint">${esc(c.hint)}</div>
+     <div class="flip-hint">tap / Space to reveal encoding</div>
+   </div>
+   <div class="back">
+     <div class="word">${esc(c.word)}</div>
+     <div class="hint" style="margin:0 0 8px">${esc(c.hint)}</div>
+     <div class="mn en"><div class="lang">EN</div><div class="txt">${esc(c.en)}</div></div>
+     ${c.ru?`<div class="mn ru"><div class="lang">RU</div><div class="txt">${esc(c.ru)}</div></div>`:''}
+     ${c.ka?`<div class="mn ka"><div class="lang">KA</div><div class="txt">${esc(c.ka)}</div></div>`:''}
+   </div>`;
+  el.querySelector('.front').addEventListener('click',()=>doFlip(el));
+  el.querySelector('.back').addEventListener('click',()=>doFlip(el));
+  const spk=el.querySelector('.spk');
+  if(spk) spk.addEventListener('click',e=>{e.stopPropagation();play(c.audio);});
+  attachDrag(el);
+  return el;
+}
+
+function render(){
+  stage.innerHTML='';
+  if(idx>=total){
+    stage.innerHTML=`<div class="done"><div class="big">🎉</div><h2>Deck cleared</h2>
+      <div>${total} card${total!=1?'s':''} triaged. Close this window.</div></div>`;
+    bar.style.width='100%'; countEl.textContent=total+' / '+total; return;
+  }
+  // render next card behind the top one for depth
+  if(idx+1<total){ const b=makeCard(cards[idx+1]); b.classList.remove('top');
+    b.style.transform='scale(.94) translateY(14px)'; b.style.pointerEvents='none'; stage.appendChild(b); }
+  stage.appendChild(makeCard(cards[idx]));
+  progress();
+  if (window.PS_AUTOPLAY !== false) play(cards[idx].audio);
+}
+
+const THRESH=110, UP_THRESH=120;
+function attachDrag(el){
+  let sx=0,sy=0,dx=0,dy=0,drag=false;
+  const like=el.querySelector('.like'), nope=el.querySelector('.nope'), sup=el.querySelector('.sup');
+  const down=e=>{ if(!el.classList.contains('top'))return; drag=true; const p=pt(e); sx=p.x; sy=p.y;
+    el.style.transition='none'; };
+  const move=e=>{ if(!drag)return; const p=pt(e); dx=p.x-sx; dy=p.y-sy;
+    el.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/18}deg)`;
+    const upIntent = dy<0 && Math.abs(dy)>Math.abs(dx);
+    like.style.opacity=(!upIntent&&dx>0)?Math.min(dx/THRESH,1):0;
+    nope.style.opacity=(!upIntent&&dx<0)?Math.min(-dx/THRESH,1):0;
+    if(sup) sup.style.opacity=upIntent?Math.min(-dy/UP_THRESH,1):0; };
+  const up=()=>{ if(!drag)return; drag=false; el.style.transition='transform .3s ease';
+    if(dy<-UP_THRESH && Math.abs(dy)>Math.abs(dx)) flyOff(el,'improve');
+    else if(dx>THRESH) flyOff(el,'green'); else if(dx<-THRESH) flyOff(el,'red');
+    else { el.style.transform=''; like.style.opacity=nope.style.opacity=0; if(sup) sup.style.opacity=0; } dx=dy=0; };
+  el.addEventListener('mousedown',down); el.addEventListener('touchstart',down,{passive:true});
+  window.addEventListener('mousemove',move); window.addEventListener('touchmove',move,{passive:true});
+  window.addEventListener('mouseup',up); window.addEventListener('touchend',up);
+  el._cleanup=()=>{window.removeEventListener('mousemove',move);window.removeEventListener('mouseup',up);
+    window.removeEventListener('touchmove',move);window.removeEventListener('touchend',up);};
+  function pt(e){ const t=e.touches&&e.touches[0]; return {x:t?t.clientX:e.clientX, y:t?t.clientY:e.clientY}; }
+}
+
+const TRAJ={green:[700,-40,30], red:[-700,-40,-30], improve:[0,-820,0]};
+function flyOff(el,decision){
+  const [tx,ty,rot]=TRAJ[decision]||[0,-40,0];
+  el.style.transform=`translate(${tx}px,${ty}px) rotate(${rot}deg)`; el.style.opacity=0;
+  const c=cards[idx]; decide(c.id, decision); history.push({idx, id:c.id, decision});
+  if(el._cleanup)el._cleanup();
+  idx++; setTimeout(render,180);
+}
+
+// buttons + keyboard drive the same flyOff()
+function swipeTop(decision){ const top=stage.querySelector('.card.top'); if(top){ top.style.transition='transform .3s ease'; flyOff(top,decision); } }
+function doFlip(el){ const now=el.classList.toggle('flipped'); if(now && window.PS_AUTOPLAY!==false) play(el._audio); }
+function flipTop(){ const top=stage.querySelector('.card.top'); if(top) doFlip(top); }
+function undo(){ if(!history.length)return; const h=history.pop(); idx=h.idx; decide(h.id, h.decision==='improve'?'unimprove':'undo'); render(); }
+document.getElementById('bNo').onclick=()=>swipeTop('red');
+document.getElementById('bYes').onclick=()=>swipeTop('green');
+document.getElementById('bImprove').onclick=()=>swipeTop('improve');
+document.getElementById('bFlip').onclick=flipTop;
+document.getElementById('bUndo').onclick=undo;
+window.addEventListener('keydown',e=>{
+  if(e.key==='ArrowLeft')swipeTop('red');
+  else if(e.key==='ArrowRight')swipeTop('green');
+  else if(e.key==='ArrowUp'){e.preventDefault();swipeTop('improve');}
+  else if(e.key===' '){e.preventDefault();flipTop();}
+  else if(e.key==='r'||e.key==='R'){ if(idx<total) play(cards[idx].audio); }
+  else if(e.key==='Backspace'){e.preventDefault();undo();}
+});
+render();
+</script>
+</body></html>

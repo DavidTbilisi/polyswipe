@@ -1,0 +1,21 @@
+{
+  "scopes": [
+    {"name": "French", "deck": "French", "flag": "🇫🇷"}
+  ],
+  "auto_flag": true,
+  "show_timer": true,
+  "timer_corner": "bottom-left",
+  "respect_manual_flag": true,
+  "day_goal": 1000,
+  "budgets": [
+    [5,   3, "green",     "#3fb950"],
+    [10,  2, "orange",    "#f0883e"],
+    [15,  5, "pink",      "#f778ba"],
+    [30,  7, "purple",    "#a371f7"],
+    [60,  4, "blue",      "#539bf5"],
+    [120, 6, "turquoise", "#39c5cf"]
+  ],
+  "over_flag": 1,
+  "over_color": "#f85149",
+  "swipe_batch": 60
+}
