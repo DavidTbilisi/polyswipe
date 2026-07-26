@@ -197,9 +197,16 @@ def _metrics(scope):
         except Exception:
             pass
     reds.sort()
+    improves = []
+    for cid in find(f"{base} tag:{c['improve_tag']}"):
+        try:
+            improves.append(mw.col.get_card(cid).note().fields[0])
+        except Exception:
+            pass
+    improves.sort()
     return dict(total=total, unlocked=unlocked, today=today, triaged=triaged,
-                tiers=tiers, reds=reds, over_col=c["over_color"], goal=c["day_goal"],
-                name=scope["name"], flag=scope.get("flag", ""))
+                tiers=tiers, reds=reds, improves=improves, over_col=c["over_color"],
+                goal=c["day_goal"], name=scope["name"], flag=scope.get("flag", ""))
 
 
 def _stats_html(scope):
@@ -215,13 +222,16 @@ def _stats_html(scope):
              f'<div class=tr><i style="width:{100*rn/tmax:.0f}%;background:{d["over_col"]}"></i></div>'
              f'<b>{rn}</b></div>')
     reds = "".join(f"<li>{w}</li>" for w in d["reds"]) or "<li class=e>none — nothing to rework ✨</li>"
+    ni = len(d["improves"])
+    imps = "".join(f"<li>{w}</li>" for w in d["improves"]) or "<li class=e>none queued ✨</li>"
     return f"""<style>
  body{{font:14px -apple-system,Segoe UI,sans-serif;background:#0d1117;color:#e6edf3;margin:0;padding:18px}}
  h1{{font-size:17px;margin:0 0 12px}} .fr{{color:#539bf5}}
- .g{{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}}
+ .g{{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}}
  .c{{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:12px}}
  .cap{{color:#8b949e;font-size:11px;text-transform:uppercase;letter-spacing:.05em}}
  .big{{font-size:24px;font-weight:700}} .big s{{font-size:13px;color:#8b949e;text-decoration:none}}
+ .big.imp{{color:#539bf5}} ul.imp li{{color:#539bf5}}
  .t{{display:grid;grid-template-columns:90px 1fr 32px;align-items:center;gap:10px;margin:7px 0;text-transform:capitalize}}
  .dot{{width:10px;height:10px;border-radius:50%}}
  .tr{{height:9px;background:#21262d;border-radius:5px;overflow:hidden}} .tr i{{display:block;height:100%}}
@@ -236,9 +246,11 @@ def _stats_html(scope):
   <div class=c><div class=cap>Unlocked</div><div class=big>{d['unlocked']}<s>/{d['total']}</s></div></div>
   <div class=c><div class=cap>Triaged</div><div class=big>{d['triaged']}<s>/{d['total']}</s></div></div>
   <div class=c><div class=cap>Today</div><div class=big>{d['today']}<s>/{d['goal']}</s></div></div>
+  <div class=c><div class=cap>Improve ★</div><div class="big imp">{ni}</div></div>
  </div>
  {rows}
- <h2>Red rework queue — {rn}</h2><ul>{reds}</ul>"""
+ <h2>Red rework queue — {rn}</h2><ul>{reds}</ul>
+ <h2>Improve queue ★ — {ni}</h2><ul class=imp>{imps}</ul>"""
 
 
 class StatsDialog(QDialog):
