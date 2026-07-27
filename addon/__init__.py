@@ -309,11 +309,15 @@ def _swipe_cards(scope):
     c = cfg()
     cids = mw.col.find_cards(f'deck:{scope["deck"]} card:1 -is:suspended')
     out = []
+    remaining = 0  # deck-wide untriaged (not just this batch)
     for cid in cids:
         try:
             card = mw.col.get_card(cid)
             if card.user_flag() != 0:      # already triaged — skip
                 continue
+            remaining += 1
+            if len(out) >= c["swipe_batch"]:
+                continue   # keep counting the total, stop collecting the batch
             n = card.note()
             g = lambda k: (n[k] if k in n else "")
             m = re.search(r"\[sound:(.*?)\]", g("Audio"))
@@ -321,20 +325,19 @@ def _swipe_cards(scope):
                         "en": g("MnemonicEN"), "ru": g("MnemonicRU"),
                         "ka": g("MnemonicKA"), "theme": g("Theme"),
                         "audio": m.group(1) if m else ""})
-            if len(out) >= c["swipe_batch"]:
-                break
         except Exception as e:
             print(PFX, "swipe card:", e)
-    return out
+    return out, remaining
 
 
-def _swipe_html(cards, scope):
+def _swipe_html(cards, scope, remaining):
     raw = open(os.path.join(ADDON_DIR, "swipe.html"), encoding="utf-8").read()
     style = raw[raw.find("<style>") + 7: raw.find("</style>")]
     body = raw[raw.find("<body>") + 6: raw.find("</body>")]
     data = ("<script>window.FR_CARDS=" + json.dumps(cards, ensure_ascii=False) + ";"
             "window.PS_FLAG=" + json.dumps(scope.get("flag", "")) + ";"
             "window.PS_LANG=" + json.dumps(scope["name"]) + ";"
+            "window.PS_REMAINING=" + json.dumps(remaining) + ";"
             "window.PS_AUTOPLAY=" + json.dumps(bool(cfg()["swipe_autoplay"])) + ";</script>")
     return f"<style>{style}</style>{data}{body}"
 
@@ -349,10 +352,10 @@ class SwipeDialog(QDialog):
         lay.setContentsMargins(0, 0, 0, 0)
         self.web = AnkiWebView(self)
         lay.addWidget(self.web)
-        cards = _swipe_cards(scope)
+        cards, remaining = _swipe_cards(scope)
         self._n = len(cards)
         self.web.set_bridge_command(self._on_cmd, self)
-        self.web.stdHtml(_swipe_html(cards, scope))
+        self.web.stdHtml(_swipe_html(cards, scope, remaining))
 
     def _on_cmd(self, cmd):
         try:

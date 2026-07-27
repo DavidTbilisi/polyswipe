@@ -99,9 +99,10 @@ if (window.PS_LANG) document.getElementById('ps-lang').textContent = ' · ' + wi
 
 const stage=document.getElementById('stage'), bar=document.getElementById('bar'), countEl=document.getElementById('count');
 const total=cards.length; let idx=0; const history=[];
+let remaining = (typeof window.PS_REMAINING==='number') ? window.PS_REMAINING : total;  // deck-wide untriaged
 
 function esc(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
-function progress(){ bar.style.width=(100*idx/total)+'%'; countEl.textContent=Math.min(idx+1,total)+' / '+total; }
+function progress(){ bar.style.width=(100*idx/total)+'%'; countEl.textContent=remaining+' left'; }
 
 function makeCard(c){
   const el=document.createElement('div'); el.className='card top'; el.dataset.id=c.id; el._audio=c.audio;
@@ -134,7 +135,7 @@ function render(){
   if(idx>=total){
     stage.innerHTML=`<div class="done"><div class="big">🎉</div><h2>Deck cleared</h2>
       <div>${total} card${total!=1?'s':''} triaged. Close this window.</div></div>`;
-    bar.style.width='100%'; countEl.textContent=total+' / '+total; return;
+    bar.style.width='100%'; countEl.textContent=remaining+' left'; return;
   }
   // render next card behind the top one for depth
   if(idx+1<total){ const b=makeCard(cards[idx+1]); b.classList.remove('top');
@@ -172,7 +173,9 @@ const TRAJ={green:[700,-40,30], red:[-700,-40,-30], improve:[0,-820,0]};
 function flyOff(el,decision){
   const [tx,ty,rot]=TRAJ[decision]||[0,-40,0];
   el.style.transform=`translate(${tx}px,${ty}px) rotate(${rot}deg)`; el.style.opacity=0;
-  const c=cards[idx]; decide(c.id, decision); history.push({idx, id:c.id, decision});
+  const c=cards[idx]; decide(c.id, decision);
+  if(decision==='green'||decision==='red') remaining--;   // improve stays untriaged
+  history.push({idx, id:c.id, decision});
   if(el._cleanup)el._cleanup();
   idx++; setTimeout(render,180);
 }
@@ -181,7 +184,9 @@ function flyOff(el,decision){
 function swipeTop(decision){ const top=stage.querySelector('.card.top'); if(top){ top.style.transition='transform .3s ease'; flyOff(top,decision); } }
 function doFlip(el){ const now=el.classList.toggle('flipped'); if(now && window.PS_AUTOPLAY!==false) play(el._audio); }
 function flipTop(){ const top=stage.querySelector('.card.top'); if(top) doFlip(top); }
-function undo(){ if(!history.length)return; const h=history.pop(); idx=h.idx; decide(h.id, h.decision==='improve'?'unimprove':'undo'); render(); }
+function undo(){ if(!history.length)return; const h=history.pop(); idx=h.idx;
+  if(h.decision==='green'||h.decision==='red') remaining++;
+  decide(h.id, h.decision==='improve'?'unimprove':'undo'); render(); }
 document.getElementById('bNo').onclick=()=>swipeTop('red');
 document.getElementById('bYes').onclick=()=>swipeTop('green');
 document.getElementById('bImprove').onclick=()=>swipeTop('improve');
